@@ -68,7 +68,7 @@
   (rum/local nil ::elements)
   (rum/local nil ::resize-observer)
   {:did-mount (fn [state]
-                (reset! (::resize-observer state) (js/ResizeObserver. (debounce #(reset! (::draw-width state) 0) 300)))
+                (reset! (::resize-observer state) (util/safe-resize-observer (debounce #(reset! (::draw-width state) 0) 300)))
                 (.observe @(::resize-observer state) (ui/main-node))
                 (update-draw-content-width state))
    :did-update update-draw-content-width

@@ -239,8 +239,16 @@
                                           (js/window.requestAnimationFrame
                                            #(do (target-observe!) (vreset! *ticking? false)))
                                           (vreset! *ticking? true)))
-               resize-observer (js/ResizeObserver. update-target!)
-               page-resize-observer (js/ResizeObserver. (fn [] (update-target-top!)))]
+               safe-resize-observer-fn (fn [callback]
+                                         (js/ResizeObserver.
+                                          (fn [entries]
+                                            (try
+                                              (js/requestAnimationFrame #(callback entries))
+                                              (catch js/Error e
+                                                (when-not (re-find #"ResizeObserver" (str e))
+                                                  (throw e)))))))
+               resize-observer (safe-resize-observer-fn update-target!)
+               page-resize-observer (safe-resize-observer-fn (fn [] (update-target-top!)))]
            ;; events
            (.observe resize-observer container)
            (.observe resize-observer table)
