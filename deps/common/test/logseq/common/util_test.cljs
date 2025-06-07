@@ -1,5 +1,5 @@
 (ns logseq.common.util-test
-  (:require [clojure.test :refer [deftest are testing]]
+  (:require [clojure.test :refer [deftest are testing is]]
             [logseq.common.util :as common-util]))
 
 (deftest valid-edn-keyword?
@@ -45,3 +45,42 @@
       "[[page-name]]"
       "end-with-backslash\\"
       "\\[]{}().+*?|$^")))
+
+(deftest safe-resize-observer
+  (testing "safe-resize-observer creates ResizeObserver when available"
+    (when (exists? js/ResizeObserver)
+      (let [callback-called (atom false)
+            callback (fn [entries] (reset! callback-called true))
+            observer (common-util/safe-resize-observer callback)]
+        (testing "creates a ResizeObserver instance"
+          (is (instance? js/ResizeObserver observer)))
+        (testing "has observe method"
+          (is (fn? (.-observe observer))))
+        (testing "has disconnect method"
+          (is (fn? (.-disconnect observer)))))))
+  
+  (testing "safe-resize-observer handles missing ResizeObserver gracefully"
+    (with-redefs [exists? (constantly false)]
+      (let [callback (fn [entries] nil)
+            observer (common-util/safe-resize-observer callback)]
+        (testing "returns nil when ResizeObserver doesn't exist"
+          (is (nil? observer))))))
+  
+  (testing "safe-resize-observer error handling"
+    (when (exists? js/ResizeObserver)
+      (let [error-thrown (atom nil)
+            original-raf js/requestAnimationFrame
+            callback (fn [entries] 
+                      (throw (js/Error. "ResizeObserver loop limit exceeded")))
+            observer (common-util/safe-resize-observer callback)]
+        (testing "suppresses ResizeObserver errors"
+          ;; Mock requestAnimationFrame to execute immediately for testing
+          (with-redefs [js/requestAnimationFrame (fn [f] (f))]
+            (try
+              ;; Simulate calling the internal callback directly
+              (let [internal-callback (.-callback observer)]
+                (internal-callback #js []))
+              (catch js/Error e
+                (reset! error-thrown e)))
+            (testing "ResizeObserver errors are suppressed"
+              (is (nil? @error-thrown)))))))))

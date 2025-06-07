@@ -5,7 +5,7 @@
             [clojure.string :as string]
             [clojure.walk :as w]
             [daiquiri.interpreter :as interpreter]
-            [frontend.util :as util]
+            [logseq.common.util :as common-util]
             [logseq.shui.hooks :as hooks]
             [rum.core :refer [use-state] :as rum]))
 
@@ -115,7 +115,7 @@
           (let [update-rect #(set-rect (. ref getBoundingClientRect))
                 updator (fn [entries]
                           (when (.-contentRect (first (js->clj entries))) (update-rect)))
-                observer (util/safe-resize-observer updator)]
+                observer (common-util/safe-resize-observer updator)]
             (update-rect)
             (.observe observer ref)
             #(.disconnect observer)))

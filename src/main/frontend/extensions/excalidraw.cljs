@@ -14,6 +14,7 @@
    [frontend.state :as state]
    [frontend.ui :as ui]
    [frontend.util :as util]
+   [logseq.common.util :as common-util]
    [goog.functions :refer [debounce]]
    [goog.object :as gobj]
    [rum.core :as rum]))
@@ -68,7 +69,7 @@
   (rum/local nil ::elements)
   (rum/local nil ::resize-observer)
   {:did-mount (fn [state]
-                (reset! (::resize-observer state) (util/safe-resize-observer (debounce #(reset! (::draw-width state) 0) 300)))
+                (reset! (::resize-observer state) (common-util/safe-resize-observer (debounce #(reset! (::draw-width state) 0) 300)))
                 (.observe @(::resize-observer state) (ui/main-node))
                 (update-draw-content-width state))
    :did-update update-draw-content-width
