@@ -2,6 +2,7 @@
   "Table"
   (:require [clojure.set :as set]
             [dommy.core :refer-macros [sel1]]
+            [logseq.common.util :as common-util]
             [logseq.shui.hooks :as hooks]
             [logseq.shui.table.impl :as impl]
             [rum.core :as rum]))
@@ -239,8 +240,8 @@
                                           (js/window.requestAnimationFrame
                                            #(do (target-observe!) (vreset! *ticking? false)))
                                           (vreset! *ticking? true)))
-               resize-observer (js/ResizeObserver. update-target!)
-               page-resize-observer (js/ResizeObserver. (fn [] (update-target-top!)))]
+               resize-observer (common-util/safe-resize-observer update-target!)
+               page-resize-observer (common-util/safe-resize-observer (fn [] (update-target-top!)))]
            ;; events
            (.observe resize-observer container)
            (.observe resize-observer table)

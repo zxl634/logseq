@@ -409,3 +409,26 @@ return: [{:id 3} {:id 2 :depend-on 3} {:id 1 :depend-on 2}]"
            (cmp (get-value a) (get-value b))
            (reduced order)))
        0 get-value+cmp))))
+
+(defn safe-resize-observer
+  "Creates a ResizeObserver with error handling to prevent uncaught ResizeObserver errors.
+   Wraps the callback with try-catch and uses requestAnimationFrame to defer updates."
+  [callback]
+  (when (exists? js/ResizeObserver)
+    (let [raf-id (atom nil)
+          safe-callback (fn [entries]
+                         (try
+                           (when @raf-id (js/cancelAnimationFrame @raf-id))
+                           (reset! raf-id
+                                  (js/requestAnimationFrame
+                                   #(try
+                                      (callback entries)
+                                      (catch js/Error e
+                                        ;; Silently ignore ResizeObserver errors
+                                        (when-not (re-find #"ResizeObserver" (str e))
+                                          (throw e))))))
+                           (catch js/Error e
+                             ;; Silently ignore ResizeObserver errors
+                             (when-not (re-find #"ResizeObserver" (str e))
+                               (throw e)))))]
+      (js/ResizeObserver. safe-callback))))
